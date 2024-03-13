@@ -73,18 +73,22 @@ def convert_cmuics_to_ics(lines: List[str]) -> List[str]:
         # If the token is a keyword that requires a newline after it,
         # then add an extra newline
         if any(keyword in token for keyword in KEYWORDS_NEWLINE):
+            assert (
+                output
+            ), "Output is empty, but token is a keyword that requires a newline before it."
             output.append("\n")
 
         # If the beginning of the token contains a keyword, then it's a new line
         if any(keyword in token for keyword in KEYWORDS):
             # First append a newline to the last line if the output is not empty
             if output:
-                output.append("\n")
-            # Then a
+                output[-1] += "\n"
+            # Then append the token to the list as a new line
             output.append(token)
         # Otherwise, append the token to the last line
         else:
-            output.append(f" {token}")
+            assert output, "Output is empty, but token is not a keyword."
+            output[-1] += f" {token}"
 
     return output
 
