@@ -13,7 +13,7 @@ declare -a cmake_defines
 help()
 {
     echo ""
-    echo "Usage: $0 -i install_dir -v version -t build_type [additional CMake defines]"
+    echo "Usage: $0 -i install_dir -v version [-t build_type] [additional CMake defines]"
     echo -e "\t-i\t[REQUIRED] path to the directory to install LLVM"
     echo -e "\t  \t\tthis directory need not exist"
     echo -e "\t-v\t[REQUIRED] version of LLVM to install"
