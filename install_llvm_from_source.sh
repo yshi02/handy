@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# record the path to the curent working directory
+working_dir=$(pwd)
+
 # default args
 build_type="RelWithDebInfo"
 
@@ -21,7 +24,11 @@ help()
 while getopts "i:v:t:" opt
 do
     case "$opt" in
-        i ) install_dir="$OPTARG" ;;
+        i ) if [[ "$OPTARG" = /* ]]; then
+                install_dir="$OPTARG"
+            else
+                install_dir="$working_dir/$OPTARG"
+            fi;;
         v ) version="$OPTARG" ;;
         t ) build_type="$OPTARG" ;;
         ? ) help ;;
@@ -31,9 +38,12 @@ done
 # print help if any of the required argument is missing
 if [ -z "$install_dir" ] || [ -z "$version" ]
 then
-    echo "Some or all of the required arguments are empty";
+    echo "Some or all of the required arguments are missing";
     help
 fi
+
+# create the install directory
+mkdir -p $install_dir
 
 # try to download the LLVM project compressed tarball from GitHub
 LLVM_SRC_URL="https://github.com/llvm/llvm-project/releases/download/llvmorg-${version}/llvm-project-${version}.src.tar.xz"
@@ -45,25 +55,24 @@ if [ $? -ne 0 ]; then
 fi
 echo "Done!"
 
-# try to untar and decomproess LLVM source
-LLVM_TARBALL_PATH="$(pwd)/llvm-project-${version}.src.tar.xz"
-LLVM_SRC_PATH="$(pwd)/llvm-project-${version}.src"
-echo -n "Untaring ${LLVM_TARBALL_PATH} to ${LLVM_SRC_PATH}... "
-tar -xf $LLVM_TARBALL_PATH
+# try to extract LLVM source from the downloaded tarball to the install dir
+LLVM_SRC_TARBALL_PATH="${working_dir}/llvm-project-${version}.src.tar.xz"
+LLVM_SRC_EXTRACT_PATH="${install_dir}/llvm-project-${version}.src"
+echo -n "Extracting LLVM source from ${LLVM_SRC_TARBALL_PATH} to ${LLVM_SRC_EXTRACT_PATH}... "
+tar -xf $LLVM_SRC_TARBALL_PATH -C $install_dir
 echo "Done!"
 
-# create the install directory and cd into it
-mkdir -p $install_dir
+# move to the install dir and build LLVM from source
+LLVM_SRC_ROOT="${LLVM_SRC_EXTRACT_PATH}/llvm"
 cd $install_dir
-echo "Now in ${install_dir}"
-
-# build LLVM from source
-LLVM_SRC_ROOT="${LLVM_SRC_PATH}/llvm"
-cmake $LLVM_SRC_ROOT -DCMAKE_BUILD_TYPE=${build_type}
+cmake $LLVM_SRC_ROOT -DCMAKE_BUILD_TYPE=${build_type} -DCMAKE_INSTALL_PREFIX=${install_dir}
 cmake --build . -j `nproc`
 
 # test LLVM build
 make check-all -j `nproc`
+
+# install LLVM
+cmake --build . --target install -j `nproc`
 
 # create LLVM_ENV
 touch LLVM_ENV
@@ -72,14 +81,13 @@ echo "" >> LLVM_ENV
 echo "LLVM_HOME=$(pwd)" >> LLVM_ENV
 echo -e "PATH=\"\${LLVM_HOME}/bin:\$PATH\"" >> LLVM_ENV
 echo -e "LD_LIBRARY_PATH=\"\${LLVM_HOME}/lib:\$LD_LIBRARY_PATH\"" >> LLVM_ENV
-echo "Created LLVM_ENV at $(pwd)/LLVM_ENV, source it to use the built LLVM"
+echo "Created LLVM_ENV at $(pwd)/LLVM_ENV, source it to use LLVM"
 
 # cleanup
-cd ..
-rm $LLVM_TARBALL_PATH
-echo "Cleaned up $LLVM_TARBALL_PATH"
-rm -r $LLVM_SRC_PATH
-echo "Cleaned up $LLVM_SRC_PATH"
+cd $working_dir
+rm $LLVM_SRC_TARBALL_PATH
+echo "Cleaned up $LLVM_SRC_TARBALL_PATH"
 
 # done!
+echo "LLVM ${version} installed at ${install_dir}"
 echo "All done!"
