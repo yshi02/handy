@@ -69,6 +69,10 @@ LLVM_SRC_TARBALL_PATH="${working_dir}/llvm-project-${version}.src.tar.xz"
 LLVM_SRC_EXTRACT_PATH="${install_dir}/llvm-project-${version}.src"
 echo "[$0] Extracting LLVM source from ${LLVM_SRC_TARBALL_PATH} to ${LLVM_SRC_EXTRACT_PATH}"
 tar -xf $LLVM_SRC_TARBALL_PATH -C $install_dir
+if [ $? -ne 0 ]; then
+    echo "Failed to extract LLVM source from ${LLVM_SRC_TARBALL_PATH} to ${LLVM_SRC_EXTRACT_PATH}"
+    exit 1
+fi
 
 # move to the install dir and build LLVM from source
 LLVM_SRC_ROOT="${LLVM_SRC_EXTRACT_PATH}/llvm"
