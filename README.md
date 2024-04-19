@@ -71,7 +71,7 @@ Usage: ./install_llvm_from_source.sh -i install_dir -v version [-t build_type] [
 
 For example, to install LLVM 16.0.0 to `$(pwd)/LLVM_16.0.0` using `Release` build with assertions enabled, run:
 ```console
-$ ./install_llvm_from_srouce.sh -i LLVM_16.0.0 -v 16.0.0 LLVM_ENABLE_ASSERTIONS=ON
+$ ./install_llvm_from_srouce.sh -i LLVM_16.0.0 -v 16.0.0 -t Release LLVM_ENABLE_ASSERTIONS=ON
 ```
 
 #### Requirements
