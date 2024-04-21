@@ -58,13 +58,14 @@ Python 3 is all you need.
 #### Usage
 
 ```console
-Usage: ./install_llvm_from_source.sh -i install_dir -v version [-t build_type] [additional CMake defines]
+Usage: ./install_llvm_from_source.sh -i install_dir -v version [-t build_type] [-j num_threads] [additional CMake defines]
 	-i	[REQUIRED] path to the directory to install LLVM
 	  		this directory need not exist
 	-v	[REQUIRED] version of LLVM to install
 	  		this should be in the format of x.x.x
 	-t	[OPTIONAL] LLVM build type (default: RelWithDebInfo)
 	  		this can be one of {Release, Debug, RelWithDebInfo, MinSizeRel}
+    -j  [OPTIONAL] number of threads to use (default: $(nproc))
 	  	[OPTIONAL] all additional CMake defines should be in the key=val format seperated by space
 	  		see https://llvm.org/docs/CMake.html#options-and-variables for available CMake variables
 ```

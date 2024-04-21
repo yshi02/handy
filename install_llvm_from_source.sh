@@ -5,6 +5,7 @@ working_dir=$(pwd)
 
 # default args
 build_type="RelWithDebInfo"
+num_threads=$(nproc)
 
 # array for extra arguments
 declare -a cmake_defines
@@ -13,20 +14,21 @@ declare -a cmake_defines
 help()
 {
     echo ""
-    echo "Usage: $0 -i install_dir -v version [-t build_type] [additional CMake defines]"
+    echo "Usage: $0 -i install_dir -v version [-t build_type] [-j num_threads] [additional CMake defines]"
     echo -e "\t-i\t[REQUIRED] path to the directory to install LLVM"
     echo -e "\t  \t\tthis directory need not exist"
     echo -e "\t-v\t[REQUIRED] version of LLVM to install"
     echo -e "\t  \t\tthis should be in the format of x.x.x"
     echo -e "\t-t\t[OPTIONAL] LLVM build type (default: RelWithDebInfo)"
     echo -e "\t  \t\tthis can be one of {Release, Debug, RelWithDebInfo, MinSizeRel}"
+    echo -e "\t-j\t[OPTIONAL] number of threads to use (default: \$(nproc))"
     echo -e "\t  \t[OPTIONAL] all additional CMake defines should be in the key=val format seperated by space"
     echo -e "\t  \t\tsee https://llvm.org/docs/CMake.html#options-and-variables for available CMake variables"
     exit 1
 }
 
 # get commandline arguments
-while getopts "i:v:t:" opt
+while getopts "i:v:t:j:" opt
 do
     case "$opt" in
         i ) if [[ "$OPTARG" = /* ]]; then
@@ -36,6 +38,7 @@ do
             fi;;
         v ) version="$OPTARG" ;;
         t ) build_type="$OPTARG" ;;
+        j ) num_threads="$OPTARG" ;;
         ? ) help ;;
     esac
 done
@@ -85,16 +88,16 @@ for define in "${cmake_defines[@]}"; do
 done
 echo "[$0] Running ${cmake_cmd[@]}"
 eval "${cmake_cmd[@]}"
-echo "[$0] Building LLVM using $(nproc) threads"
-cmake --build . -j `nproc`
+echo "[$0] Building LLVM using $num_threads threads"
+cmake --build . -j $num_threads
 
 # test LLVM build
 echo "[$0] Checking LLVM build"
-make check-all -j `nproc`
+make check-all -j $num_threads
 
 # install LLVM
 echo "[$0] Installing LLVM to $install_dir"
-cmake --build . --target install -j `nproc`
+cmake --build . --target install -j num_threads
 
 # create LLVM_ENV
 touch LLVM_ENV
