@@ -97,7 +97,7 @@ make check-all -j $num_threads
 
 # install LLVM
 echo "[$0] Installing LLVM to $install_dir"
-cmake --build . --target install -j num_threads
+cmake --build . --target install -j $num_threads
 
 # create LLVM_ENV
 touch LLVM_ENV
