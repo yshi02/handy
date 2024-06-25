@@ -1,11 +1,14 @@
 #!/bin/bash
 
+_DEBUG="on"
+
 # record the path to the curent working directory
 working_dir=$(pwd)
 
 # default args
 build_type="RelWithDebInfo"
 num_threads=$(nproc)
+env_file="LLVM_ENV"
 
 # array for extra arguments
 declare -a cmake_defines
@@ -14,7 +17,7 @@ declare -a cmake_defines
 help()
 {
     echo ""
-    echo "Usage: $0 -i install_dir -v version [-t build_type] [-j num_threads] [additional CMake defines]"
+    echo "Usage: $0 -i install_dir -v version [-t build_type] [-j num_threads] [-e env_file] [additional CMake defines]"
     echo -e "\t-i\t[REQUIRED] path to the directory to install LLVM"
     echo -e "\t  \t\tthis directory need not exist"
     echo -e "\t-v\t[REQUIRED] version of LLVM to install"
@@ -22,13 +25,14 @@ help()
     echo -e "\t-t\t[OPTIONAL] LLVM build type (default: RelWithDebInfo)"
     echo -e "\t  \t\tthis can be one of {Release, Debug, RelWithDebInfo, MinSizeRel}"
     echo -e "\t-j\t[OPTIONAL] number of threads to use (default: \$(nproc))"
+    echo -e "\t-e\t[OPTIONAL] name of the env file"
     echo -e "\t  \t[OPTIONAL] all additional CMake defines should be in the key=val format seperated by space"
     echo -e "\t  \t\tsee https://llvm.org/docs/CMake.html#options-and-variables for available CMake variables"
     exit 1
 }
 
 # get commandline arguments
-while getopts "i:v:t:j:" opt
+while getopts "i:v:t:j:e:" opt
 do
     case "$opt" in
         i ) if [[ "$OPTARG" = /* ]]; then
@@ -39,6 +43,7 @@ do
         v ) version="$OPTARG" ;;
         t ) build_type="$OPTARG" ;;
         j ) num_threads="$OPTARG" ;;
+        e ) env_file="$OPTARG" ;;
         ? ) help ;;
     esac
 done
@@ -47,6 +52,16 @@ done
 shift $((OPTIND-1))
 # any remaining arguments are treated as additional CMake defines
 cmake_defines=("$@")
+
+if [ "$_DEBUG" == "on" ]
+then
+    echo "[$0] [DEBUG] install_dir = $install_dir"
+    echo "[$0] [DEBUG] version = $version"
+    echo "[$0] [DEBUG] build_type = $build_type"
+    echo "[$0] [DEBUG] num_threads = $num_threads"
+    echo "[$0] [DEBUG] env_file = $env_file"
+    echo "[$0] [DEBUG] cmake_defines = $cmake_defines"
+fi
 
 # print help if any of the required argument is missing
 if [ -z "$install_dir" ] || [ -z "$version" ]
@@ -100,13 +115,13 @@ echo "[$0] Installing LLVM to $install_dir"
 cmake --build . --target install -j $num_threads
 
 # create LLVM_ENV
-touch LLVM_ENV
-echo '#!/bin/bash' >> LLVM_ENV
-echo "" >> LLVM_ENV
-echo "LLVM_HOME=$(pwd)" >> LLVM_ENV
-echo -e "PATH=\"\${LLVM_HOME}/bin:\$PATH\"" >> LLVM_ENV
-echo -e "LD_LIBRARY_PATH=\"\${LLVM_HOME}/lib:\$LD_LIBRARY_PATH\"" >> LLVM_ENV
-echo "[$0] Created LLVM_ENV at $(pwd)/LLVM_ENV, source it to use LLVM"
+touch $env_file
+echo "#!/bin/bash" >> $env_file
+echo "" >> $env_file
+echo "LLVM_HOME=$(pwd)" >> $env_file
+echo -e "PATH=\"\${LLVM_HOME}/bin:\$PATH\"" >> $env_file
+echo -e "LD_LIBRARY_PATH=\"\${LLVM_HOME}/lib:\$LD_LIBRARY_PATH\"" >> $env_file
+echo "[$0] Created $env_file at $(pwd)/$env_file, source it to use LLVM"
 
 # cleanup
 cd $working_dir
